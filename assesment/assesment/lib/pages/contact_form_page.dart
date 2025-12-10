@@ -21,8 +21,8 @@ class _ContactFormPageState extends State<ContactFormPage> {
   TextEditingController phoneC = TextEditingController();
   TextEditingController dateC = TextEditingController();
 
-  Color? pickedColor;            // ← ubah jd nullable
-  String hexColor = "";          // ← default kosong
+  Color? pickedColor;
+  String hexColor = "";
 
   String fileName = "";
   Uint8List? imageBytes;
@@ -43,7 +43,7 @@ class _ContactFormPageState extends State<ContactFormPage> {
     }
   }
 
-  // PILIH GAMBAR
+  // PICK IMAGE
   Future pickImage() async {
     var result = await FilePicker.platform.pickFiles(
       type: FileType.image,
@@ -68,8 +68,10 @@ class _ContactFormPageState extends State<ContactFormPage> {
           onColorChanged: (value) {
             setState(() {
               pickedColor = value;
+
+              // FIX DEPRECATED → gunakan toARGB32()
               hexColor =
-                  "#${value.value.toRadixString(16).substring(2).toUpperCase()}";
+                  "#${value.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}";
             });
           },
         ),
@@ -91,14 +93,12 @@ class _ContactFormPageState extends State<ContactFormPage> {
       return;
     }
 
-    // VALIDASI WARNA
     if (pickedColor == null || hexColor.isEmpty) {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text("Warna belum dipilih")));
       return;
     }
 
-    // VALIDASI GAMBAR
     if (imageBytes == null) {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text("Gambar wajib dipilih")));
@@ -128,6 +128,7 @@ class _ContactFormPageState extends State<ContactFormPage> {
           key: formKey,
           child: ListView(
             children: [
+              // NAME
               TextFormField(
                 controller: nameC,
                 validator: (v) => validateName(v!),
@@ -135,6 +136,7 @@ class _ContactFormPageState extends State<ContactFormPage> {
               ),
               const SizedBox(height: 16),
 
+              // PHONE
               TextFormField(
                 controller: phoneC,
                 validator: (v) => validatePhone(v!),
@@ -142,6 +144,7 @@ class _ContactFormPageState extends State<ContactFormPage> {
               ),
               const SizedBox(height: 16),
 
+              // DATE
               TextFormField(
                 controller: dateC,
                 readOnly: true,
@@ -155,6 +158,7 @@ class _ContactFormPageState extends State<ContactFormPage> {
 
               const SizedBox(height: 20),
 
+              // COLOR PREVIEW
               Container(
                 height: 50,
                 decoration: BoxDecoration(
@@ -177,6 +181,7 @@ class _ContactFormPageState extends State<ContactFormPage> {
 
               const SizedBox(height: 10),
 
+              // IMAGE PREVIEW
               imageBytes != null
                   ? Image.memory(imageBytes!, height: 200)
                   : const Text("Tidak ada gambar dipilih"),
@@ -193,10 +198,11 @@ class _ContactFormPageState extends State<ContactFormPage> {
     );
   }
 
-  // Validasi Nama
+  // VALIDASI NAMA
   String? validateName(String value) {
     if (value.isEmpty) return "Nama harus diisi";
     if (!value.contains(" ")) return "Nama minimal 2 kata";
+
     final words = value.split(" ");
     for (var w in words) {
       if (!RegExp(r"^[A-Z][a-zA-Z]*$").hasMatch(w)) {
@@ -206,7 +212,7 @@ class _ContactFormPageState extends State<ContactFormPage> {
     return null;
   }
 
-  // Validasi Telepon
+  // VALIDASI TELEPON
   String? validatePhone(String value) {
     if (value.isEmpty) return "Nomor telepon harus diisi";
     if (!RegExp(r"^[0-9]+$").hasMatch(value)) return "Harus angka";
