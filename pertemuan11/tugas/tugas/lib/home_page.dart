@@ -9,16 +9,18 @@ class HomePage extends StatefulWidget {
   @override
   State<HomePage> createState() => _HomePageState();
 }
- 
+
 class _HomePageState extends State<HomePage> {
   final DataService _dataService = DataService();
   final _formKey = GlobalKey<FormState>();
   final _nameCtl = TextEditingController();
   final _jobCtl = TextEditingController();
+
   String _result = '-';
   List<User> _users = [];
+
   UserCreate? usCreate;
-  
+  UserCreate? usUpdate;
 
   @override
   void dispose() {
@@ -65,29 +67,31 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               const SizedBox(height: 8.0),
+
+              /// BUTTON ROW
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () async {
-                      final res = await _dataService.getUsers();
-                      if(res != null) {
-                        setState(() {
-                          _result = res.toString();
-                        });
-                      } else {
-                        displaySnackbar('Failed to fetch users');
-                      }
+                        final res = await _dataService.getUsers();
+                        if (res != null) {
+                          setState(() {
+                            _result = res.toString();
+                          });
+                        } else {
+                          displaySnackbar('Failed to fetch users');
+                        }
                       },
                       child: const Text('GET'),
                     ),
                   ),
-                  const SizedBox(width: 8.0),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () async {
-                        if (_nameCtl.text.isEmpty || _jobCtl.text.isEmpty) {
+                        if (_nameCtl.text.isEmpty ||
+                            _jobCtl.text.isEmpty) {
                           displaySnackbar('Semua field harus diisi');
                           return;
                         }
@@ -97,7 +101,7 @@ class _HomePageState extends State<HomePage> {
                           job: _jobCtl.text,
                         );
 
-                        final UserCreate? res =
+                        final res =
                             await _dataService.postUser(postModel);
 
                         setState(() {
@@ -109,31 +113,47 @@ class _HomePageState extends State<HomePage> {
                         _jobCtl.clear();
                       },
                       child: const Text('POST'),
-                    )),
-                  const SizedBox(width: 8.0),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () async{
-                        if (_nameCtl.text.isEmpty || _jobCtl.text.isEmpty) {
-                          displaySnackbar('Semua data harus di isi');
+                      onPressed: () async {
+                        if (_nameCtl.text.isEmpty ||
+                            _jobCtl.text.isEmpty) {
+                          displaySnackbar('Semua data harus diisi');
                           return;
                         }
+
                         final res = await _dataService.putUser(
-                          '3', _nameCtl.text, _jobCtl.text);
+                          '3',
+                          _nameCtl.text,
+                          _jobCtl.text,
+                        );
+
                         setState(() {
                           _result = res.toString();
+                          usUpdate = UserCreate(
+                            id: '3',
+                            name: _nameCtl.text,
+                            job: _jobCtl.text,
+                            createdAt:
+                                DateTime.now().toString(),
+                          );
                         });
+
                         _nameCtl.clear();
                         _jobCtl.clear();
                       },
                       child: const Text('PUT'),
                     ),
                   ),
-                  const SizedBox(width: 8.0),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () async{
-                        final res = await _dataService.deleteUser('4');
+                      onPressed: () async {
+                        final res =
+                            await _dataService.deleteUser('4');
                         setState(() {
                           _result = res.toString();
                         });
@@ -143,47 +163,59 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ],
               ),
+
+              const SizedBox(height: 8),
+
+              /// MODEL GET BUTTON
               Row(
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () async{
-                        final users = await _dataService.getUserModel();
+                      onPressed: () async {
+                        final users =
+                            await _dataService.getUserModel();
                         setState(() {
                           _users = users!.toList();
                         });
                       },
-                      child: const Text('Model Class User Example'),
+                      child: const Text(
+                          'Model Class User Example'),
                     ),
                   ),
-                  const SizedBox(width: 8.0),
+                  const SizedBox(width: 8),
                   ElevatedButton(
                     onPressed: () {
                       setState(() {
                         _result = '-';
                         _users.clear();
+                        usCreate = null;
+                        usUpdate = null;
                       });
                     },
                     child: const Text('Reset'),
                   ),
                 ],
               ),
-              const SizedBox(height: 8.0),
+
+              const SizedBox(height: 10),
               const Text(
                 'Result',
                 style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20.0,
-                ),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18),
               ),
-              const SizedBox(height: 8.0),
+              const SizedBox(height: 8),
+
               Expanded(
-                child: _users.isEmpty ? Text(_result) : _buildListUser(),
+                child: _users.isNotEmpty
+                    ? _buildListUser()
+                    : Text(_result),
               ),
-              const SizedBox(
-                height: 20,
-              ),
-              hasilCard(context),
+
+              const SizedBox(height: 10),
+              hasilCreateCard(),
+              const SizedBox(height: 10),
+              hasilUpdateCard(),
             ],
           ),
         ),
@@ -191,41 +223,47 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  /// LIST USER
   Widget _buildListUser() {
-  return ListView.separated(
-    itemBuilder: (context, index) {
-      final user = _users[index];
-
-      return Card(
-        child: ListTile(
-          leading: ClipRRect(
-            borderRadius: BorderRadius.circular(20.0),
-            child: Image.network(
-              user.avatar,
-              width: 40,
-              height: 40,
-              fit: BoxFit.cover,
+    return ListView.separated(
+      itemBuilder: (context, index) {
+        final user = _users[index];
+        return Card(
+          child: ListTile(
+            leading: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Image.network(
+                user.avatar,
+                width: 40,
+                height: 40,
+                fit: BoxFit.cover,
+              ),
             ),
+            title:
+                Text('${user.firstName} ${user.lastName}'),
+            subtitle: Text(user.email),
           ),
-          title: Text('${user.firstName} ${user.lastName}'),
-          subtitle: Text(user.email),
-        ),
-      );
-    },
-    separatorBuilder: (context, index) => const SizedBox(height: 10.0),
-    itemCount: _users.length,
-  );
-}
-  Widget hasilCard(BuildContext context) {
-    return Column(children: [
-      if (usCreate != null)
-        UserCard(usrCreate: usCreate!,
-        )
-      else
-      const Text('no data'),
-    ]);
+        );
+      },
+      separatorBuilder: (_, __) =>
+          const SizedBox(height: 8),
+      itemCount: _users.length,
+    );
   }
 
+  /// POST CARD
+  Widget hasilCreateCard() {
+    return usCreate != null
+        ? UserCard(usrCreate: usCreate!)
+        : const Text('no data');
+  }
+
+  /// PUT CARD
+  Widget hasilUpdateCard() {
+    return usUpdate != null
+        ? UserCard(usrCreate: usUpdate!)
+        : const Text('no data');
+  }
 
   dynamic displaySnackbar(String msg) {
     return ScaffoldMessenger.of(context)
